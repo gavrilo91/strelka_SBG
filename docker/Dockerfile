@@ -38,6 +38,8 @@ WORKDIR /opt/build
 RUN ../strelka-2.9.7.release_src/configure --jobs=4 --prefix=/opt
 RUN make -j4 install
 
+WORKDIR /opt
+
 COPY Dockerfile /opt/
 MAINTAINER Gavrilo Andric, Seven Bridges, <gavrilo.andric@sbgenomics.com>
 
