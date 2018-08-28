@@ -1,8 +1,17 @@
 from sbg import cwl
-from subprocess import check_call
+from subprocess import check_call, check_output
 
 
-@cwl.to_tool(outputs=dict(),
+@cwl.to_tool(outputs=dict(stats_log=cwl.File(glob='results/stats/runStats.tsv'),
+                          somatic_snvs=cwl.File(glob='results/variants/somatic.snvs.vcf.gz',
+                                                secondary_files='.tbi',
+                                                doc="All somatic SNVs inferred in the tumor sample"),
+                          somatic_snvs_tbi=cwl.File(glob='results/variants/somatic.snvs.vcf.gz.tbi'),
+                          somatic_indels=cwl.File(glob='results/variants/somatic.indels.vcf.gz',
+                                                  secondary_files='.tbi',
+                                                  doc="All somatic Indels inferred in the tumor sample"),
+                          somatic_indels_tbi=cwl.File(glob='results/variants/somatic.indels.vcf.gz.tbi')
+                          ),
              docker='images.sbgenomics.com/gavrilo_andric/strelka:1')
 def strelka(normal_bam: cwl.File(secondary_files='.bai',
                                  doc='Normal sample BAM or CRAM file. (no default)'),
@@ -39,11 +48,13 @@ def strelka(normal_bam: cwl.File(secondary_files='.bai',
     strelka_cmd += ['--normalBam', normal_bam['path']]
     strelka_cmd += ['--tumorBam', tumor_bam['path']]
     strelka_cmd += ['--referenceFasta', reference_fasta['path']]
+    strelka_cmd += ['--runDir', '.']
 
     if indel_candidates:
         strelka_cmd += ['--indelCandidates', indel_candidates['path']]
 
-    check_call(strelka_cmd)
+    check_output(strelka_cmd)
+    check_call(['python', 'runWorkflow.py', '-m', 'local', '-j', '8'])
 
 
 if __name__ == '__main__':
